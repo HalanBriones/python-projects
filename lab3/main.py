@@ -62,9 +62,9 @@ def calculate_monthly_cell_phone_bill_charge_cad(air_time,text_messages):
         print("Total charge is: ", total_charge)
 
 def main():
-    qualifies_for_loan()
+    #qualifies_for_loan()
     print("----------------------------------------")
-    calculate_monthly_cell_phone_bill_charge_cad(50,60)
+    calculate_monthly_cell_phone_bill_charge_cad(-1,-1)
 if __name__ == "__main__":
     main()
 
