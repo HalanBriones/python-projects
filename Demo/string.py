@@ -74,6 +74,7 @@ for i in range(len(firstName)):
 #if +:start < up to
 #if :start > up to when the steps is negative
 str = "This is a test!"
+print(str[-1:])
 print(str[0:4])
 print(str[:4])
 print(str[0:7])

@@ -10,6 +10,17 @@ for x in range(1, len(arr)):
         max = arr[x]
 print(max)
 '''
+
+#FOR structure
+#for variable in sequence:
+    # Code block to be executed for each item in the sequence
+    # This code block must be indented
+# for keyword: This initiates the for loop.
+# variable: This is a temporary variable that takes on the value of each item in the sequence during each iteration of the loop. You can name this variable anything you like.
+# in keyword: This keyword links the variable to the sequence you want to iterate over.
+# sequence: This is the iterable object (e.g., a list, tuple, string, range() object) whose items you want to process.
+# Colon (:): This signifies the end of the for loop's header.
+
 #While example with functions if else, etc
 def helloWorld():
     print("Hello World")
