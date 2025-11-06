@@ -31,7 +31,7 @@ print(df.loc[0]["First Name"]) #first first values
 
 #Count: total of numbers of rows (Do Not count NaN or None value)
 #get uniques values froma colum
-df['A'].unique()
+# df['A'].unique()
 
 #Sort values Data Frame in final exam
 
@@ -40,5 +40,14 @@ df['A'].unique()
 #group by
 
 
-#Key arguments or position arguments but dont mix them
+#Key arguments or position arguments but dont mix them speaking about functions
 
+unformattedFloat = 233.654
+wholeNumber = str(unformattedFloat)
+print(type(wholeNumber))
+print(wholeNumber)
+
+newFormattedInt = int(unformattedFloat)
+print(type(newFormattedInt))
+print(newFormattedInt)
+print(type(unformattedFloat))
