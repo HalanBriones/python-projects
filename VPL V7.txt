@@ -1,0 +1,127 @@
+import re
+import time
+
+import pandas as pd
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from bs4 import BeautifulSoup
+from selenium.webdriver.common.by import By
+
+pd.set_option('display.max_columns', None)
+pd.set_option('display.expand_frame_repr', False)
+pd.set_option('display.width', 1000)
+
+
+DRIVER_PATH = "/Python/ChromeDriver/chromedriver.exe"
+URL = "https://vpl.bibliocommons.com/events/search/index"
+
+browser = webdriver.Chrome(service=Service(DRIVER_PATH))
+browser.get(URL)
+
+# Give the browser time to load all content.
+time.sleep(3)
+
+content = browser.find_elements(by=By.CSS_SELECTOR, value=".event-details")
+
+# insert a "*" in front of the first digital number
+def insertDelimiter(originalStr):
+    index=re.search(r'\d+', originalStr).start()
+    newStr=originalStr[:index]+"*"+originalStr[index:]
+    return newStr
+# select the time (format:xx:xx AM or PM)
+def selectEventTime(originalStr):
+    matchList=re.findall(r"((1[0-2]|0?[1-9]):([0-5][0-9]) ?([AaPp][Mm]))", originalStr)
+    time=matchList[0][0]+" - "+matchList[1][0]
+    return time
+#select the date (format: May x, 2022)  2025/03/22; 03/22/2025
+def selectEventData(originalStr):
+    import re
+    matchList = re.findall(r"((Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)(\.)?(\w*)?(\.)?(\s*\d{0,2}\s*),(\s*\d{4}))", originalStr)
+    date=matchList[0][0]
+    return date
+
+def catchKey(eventList, key):
+    for i in eventList:
+        #print(i)
+        if i == key:
+            value = "True"
+            break
+        else:
+            value = "False"
+    return value
+# clean data for extracting date
+def cleanStringData(originalStr):
+    rawString=originalStr
+    # Remove hidden characters for tabs and new lines.
+    rawString = re.sub(r"[\n\t]*", "", rawString)
+    # Replace two or more consecutive empty spaces with '*'
+    rawString = re.sub('[ ]{2,}', '*', rawString)
+    # Insert a delimiter before time
+    rawString = rawString.replace("Event location: ", "*Event location*")
+    rawString = rawString.replace("BranchRhymes", "Branch*")
+    rawString = rawString.replace("Rhymes", "*")
+    #rawString = rawString.replace("A ", "*")
+    rawString = rawString.replace("BranchCome", "Branch*")
+    rawString = rawString.replace("Branch", "Branch*")
+    rawString = rawString.replace("Hastings", "*Hastings")
+    rawString = rawString.replace("LibraryDrop","Library*")
+    rawString = rawString.replace("BranchJoin", "Branch*")
+    rawString = rawString.replace("Central Library", "Central Library*")
+    rawString = rawString.replace("Renfrew BranchLearn", "Renfrew Branch*")
+    rawString = rawString.replace("All day", "12:00 AM – 12:00 PM*")
+    rawString = rawString.replace("Online event", "*Online event*")
+    rawString = rawString.replace(", March ", "")
+    rawString = rawString.replace("Featured", "Featured ")
+    rawString = rawString.replace("Featured  Event", "*Featured  Event")
+    rawString = rawString.replace("InProgress ", "*")
+    rawString = rawString.replace("Saturday", "")
+    return rawString
+event_name=[]
+event_data=[]
+event_time=[]
+event_location=[]
+for e in content:
+    textContent = e.get_attribute('innerHTML')
+    # Beautiful soup removes HTML tags from our content if it exists.
+    soup = BeautifulSoup(textContent, features="lxml")
+    rawString = soup.get_text()
+
+    # Remove hidden characters for tabs and new lines.
+    rawString = re.sub(r"[\n\t]*", "", rawString)
+
+    # Replace two or more consecutive empty spaces with '*'
+    rawString = re.sub('[ ]{2,}', '*', rawString)
+    # Insert a delimiter before time
+    print("Raw String")
+    print(rawString)
+    cleanRawString = cleanStringData(rawString)
+
+    cleanRawString=insertDelimiter(cleanRawString)
+    print("Raw String After Clean\n",cleanRawString)
+    eventArray = cleanRawString.split('*')
+    print("Event List\n",eventArray)
+    EVENT_NAME = 0
+    value = catchKey(eventArray,"Online event")
+    print(value)
+    if value == "True":
+        location = "Online"
+    elif value == "False":
+        EVENT_LOCATION = 4
+        location = eventArray[EVENT_LOCATION]
+    eventTime = selectEventTime(cleanRawString)
+    eventDate = selectEventData(cleanRawString)
+
+    eventName = eventArray[EVENT_NAME]
+    eventLocation = location
+    new_eventName = eventName[:eventName.find(",")]
+    print("Event Name: ", new_eventName)
+    event_name.append(new_eventName)
+    print("Event Date: ", eventDate)
+    event_data.append(eventDate)
+    print("Event Time: ", eventTime)
+    event_time.append(eventTime)
+    print("Event Location: ",eventLocation)
+    event_location.append(eventLocation)
+    print("***")  # Go to new line.
+final_df = pd.DataFrame({"Event Name": event_name, "Event Data": event_data,  "Event Time": event_time, "Event Location": event_location})
+print(final_df)

@@ -1,0 +1,113 @@
+import re
+import time
+
+import pandas as pd
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from bs4 import BeautifulSoup
+from selenium.webdriver.common.by import By
+
+pd.set_option('display.max_columns', None)
+pd.set_option("display.expand_frame_repr", False)
+DRIVER_PATH = "/Python/ChromeDriver/chromedriver.exe"
+
+
+def getRawString(content):
+    rawStringList = []
+    for e in content:
+        start = e.get_attribute('innerHTML')
+        # Beautiful soup allows us to remove HTML tags from our content if it exists.
+        soup = BeautifulSoup(start, features="lxml")
+        rawString = soup.get_text().strip()
+        rawStringList.append(rawString)
+    return rawStringList
+
+def getEventDate(Arr):
+    index=Arr[1].find(Arr[2])
+    value=index+len(Arr[2])
+    eventDate=Arr[1][:index-len(Arr[2])-3]
+    return eventDate
+
+def getEventTime(Arr):
+    index=Arr[1].find(Arr[2])
+    indexTime=len(Arr[2])+index
+    return Arr[1][indexTime:len(Arr[1])-1] + "-"+ Arr[2]
+def showEventInfo():
+    browser = webdriver.Chrome(service=Service(DRIVER_PATH))
+    for pageNum in range(1, 3):
+        URL = "https://vpl.bibliocommons.com/v2/events?page=" + str(pageNum)
+        print("Show Page ",pageNum)
+        browser.get(URL)
+
+        # Give the browser time to load all content.
+        time.sleep(6)
+
+        #Select all Event names
+        contentEventName = browser.find_elements(by=By.CSS_SELECTOR, value=".heading--linked .cp-link")
+        #Select all Event Dates
+        contentEventDate = browser.find_elements(by=By.CSS_SELECTOR, value=".cp-event-date")
+        #Select all Event Locations
+        contentLocation = browser.find_elements(by=By.CSS_SELECTOR, value=".cp-event-location")
+
+        # Extracts text from scraped content
+
+        #clean event Name
+        rawEventNameList=getRawString(contentEventName)
+
+        for eventName in rawEventNameList:
+            eventNameList.append(eventName)
+
+        #clean date and time
+        rawEventDateList=getRawString(contentEventDate)
+
+        for eventData in rawEventDateList:
+            #eventDataString = eventData.replace("View ", "*")
+            eventData = eventData.replace("on ", "*")
+            eventData=eventData.replace(" | ","*")
+            eventData=eventData.replace(" – ","*")
+            eventData = eventData.replace("to ", "*")
+            eventData = eventData.replace("All day", "12:00 AM – 12:00 PM**")
+            eventData = eventData.replace("Featured Event","*")
+            eventData = eventData.replace("LibraryThinking", "Library*Thinking")
+            # View all datesView
+            eventData = eventData.replace("View all datesView", "*")
+            #print(eventData)
+            eventDataArray = eventData.split('*')
+
+            eventDate=getEventDate(eventDataArray)
+            eventTime=getEventTime(eventDataArray)
+            eventDateList.append(eventDate)
+            eventTimeList.append(eventTime)
+        # clean location
+        rawEventLocationList=getRawString(contentLocation)
+
+        for location in rawEventLocationList:
+            locationString = location.replace("Event location: ", "*")
+            eventArray = locationString.split('*')
+
+            location = eventArray[len(eventArray) - 1]
+            eventLocationList.append(location)
+
+        for i in range (0, len(eventNameList)):
+            print("Event Name: ", eventNameList[i])
+            print("Event Date: ", eventDateList[i])
+            print("Event Time: ", eventTimeList[i])
+            print("Event Location: ", eventLocationList[i])
+            print("****")
+
+        print("-------")
+
+eventNameList=[]
+eventDateList=[]
+eventTimeList=[]
+eventLocationList=[]
+
+showEventInfo()
+
+
+#Create a dataframe
+
+dataSet={"Event Name":eventNameList, "Event Date":eventDateList,"Event Time":eventTimeList,"Location":eventLocationList}
+df=pd.DataFrame(dataSet)
+print(df)
+
